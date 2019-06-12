@@ -1604,7 +1604,6 @@ int	DisplayContainerInfo	(ContainerInfo *CI, int Cmd)
           Fuid[139]='.';
           snprintf(Fuid+140,sizeof(Fuid)-140,"%Lu",(long long unsigned int)Sum->DataLen);
           if (ListOutFile) fprintf(ListOutFile,"fuid=\"%s\" ",Fuid);
-          free(Sum);
         }
         fclose(Fin);
       }
