@@ -200,7 +200,7 @@ function migrate_35_36($dbManager, $force = false)
 
     if($total != 0)
     {
-        echo "*** Updated hash of $count/$total manual copyright/ecc/keyword/pfile findings ***\n";
+        echo "*** Updated hash of $count/$total manual copyright/ecc/keyword findings ***\n";
     }
 
     if ($totalPfile != 0)

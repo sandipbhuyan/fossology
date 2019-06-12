@@ -18,6 +18,10 @@
  * \file
  * \brief Contains all utility functions used by FOSSology
  */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "ununpack.h"
 #include "externs.h"
 #include "regex.h"
@@ -1131,8 +1135,8 @@ int	DBInsertPfile	(ContainerInfo *CI, char *Fuid)
   /* Check if the pfile exists */
   memset(SQL,'\0',MAXSQL);
   snprintf(SQL,MAXSQL,"SELECT pfile_pk,pfile_mimetypefk FROM pfile "
-      "WHERE pfile_sha1 = '%.40s' AND pfile_md5 = '%.32s' AND pfile_size = '%s';",
-      Fuid,Fuid+41,Fuid+74);
+      "WHERE pfile_sha1 = '%.40s' AND pfile_md5 = '%.32s' AND pfile_sha256 = '%.64s' AND pfile_size = '%s';",
+      Fuid,Fuid+41,Fuid+74,Fuid+140);
   result =  PQexec(pgConn, SQL); /* SELECT */
   if (fo_checkPQresult(pgConn, result, SQL, __FILE__, __LINE__)) SafeExit(12);
 
@@ -1146,14 +1150,14 @@ int	DBInsertPfile	(ContainerInfo *CI, char *Fuid)
     memset(SQL,'\0',MAXSQL);
     if (CMD[CI->PI.Cmd].DBindex > 0)
     {
-      snprintf(SQL,MAXSQL,"INSERT INTO pfile (pfile_sha1,pfile_md5,pfile_size,pfile_mimetypefk) "
-               "VALUES ('%.40s','%.32s','%s','%ld');",
-          Fuid,Fuid+41,Fuid+74,CMD[CI->PI.Cmd].DBindex);
+      snprintf(SQL,MAXSQL,"INSERT INTO pfile (pfile_sha1,pfile_md5,pfile_sha256,pfile_size,pfile_mimetypefk) "
+               "VALUES ('%.40s','%.32s','%.64s','%s','%ld');",
+          Fuid,Fuid+41,Fuid+74,Fuid+140,CMD[CI->PI.Cmd].DBindex);
     }
     else
     {
-      snprintf(SQL,MAXSQL,"INSERT INTO pfile (pfile_sha1,pfile_md5,pfile_size) VALUES ('%.40s','%.32s','%s');",
-          Fuid,Fuid+41,Fuid+74);
+      snprintf(SQL,MAXSQL,"INSERT INTO pfile (pfile_sha1,pfile_md5,pfile_sha256,pfile_size) VALUES ('%.40s','%.32s','%.64s','%s');",
+          Fuid,Fuid+41,Fuid+74,Fuid+140);
     }
     result =  PQexec(pgConn, SQL); /* INSERT INTO pfile */
     // ignore duplicate constraint failure (23505), report others
@@ -1557,19 +1561,28 @@ int	DisplayContainerInfo	(ContainerInfo *CI, int Cmd)
   {
     CksumFile *CF;
     Cksum *Sum;
+    char SHA256[64], command[1000] = "sha256sum ";
+    strcat(command,CI->Source);
 
     CF = SumOpenFile(CI->Source);
+    FILE* file = popen(command, "r");
+    fscanf(file, "%64s", SHA256);
+    pclose(file);
     if (CF)
     {
       Sum = SumComputeBuff(CF);
       SumCloseFile(CF);
+      fclose(file);
+
       if (Sum)
       {
         for(i=0; i<20; i++) { sprintf(Fuid+0+i*2,"%02X",Sum->SHA1digest[i]); }
         Fuid[40]='.';
         for(i=0; i<16; i++) { sprintf(Fuid+41+i*2,"%02X",Sum->MD5digest[i]); }
         Fuid[73]='.';
-        snprintf(Fuid+74,sizeof(Fuid)-74,"%Lu",(long long unsigned int)Sum->DataLen);
+        for(i=0; i<64; i++) { sprintf(Fuid+74+i,"%c",SHA256[i]); }
+        Fuid[139]='.';
+        snprintf(Fuid+140,sizeof(Fuid)-140,"%Lu",(long long unsigned int)Sum->DataLen);
         if (ListOutFile) fprintf(ListOutFile,"fuid=\"%s\" ",Fuid);
         free(Sum);
       } /* if Sum */
@@ -1587,7 +1600,9 @@ int	DisplayContainerInfo	(ContainerInfo *CI, int Cmd)
           Fuid[40]='.';
           for(i=0; i<16; i++) { sprintf(Fuid+41+i*2,"%02X",Sum->MD5digest[i]); }
           Fuid[73]='.';
-          snprintf(Fuid+74,sizeof(Fuid)-74,"%Lu",(long long unsigned int)Sum->DataLen);
+          for(i=0; i<64; i++) { sprintf(Fuid+74+i,"%c",SHA256[i]); }
+          Fuid[139]='.';
+          snprintf(Fuid+140,sizeof(Fuid)-140,"%Lu",(long long unsigned int)Sum->DataLen);
           if (ListOutFile) fprintf(ListOutFile,"fuid=\"%s\" ",Fuid);
           free(Sum);
         }
