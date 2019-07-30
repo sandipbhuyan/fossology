@@ -24,6 +24,7 @@ use Fossology\Lib\Dao\AgentDao;
 use Fossology\Lib\Dao\ClearingDao;
 use Fossology\Lib\Dao\LicenseDao;
 use Fossology\Lib\Dao\UploadDao;
+use Fossology\Lib\Dao\SoftwareHeritageDao;
 use Fossology\Lib\Data\ClearingDecision;
 use Fossology\Lib\Data\Tree\ItemTreeBounds;
 use Fossology\Lib\Plugin\DefaultPlugin;
@@ -54,8 +55,10 @@ class ui_browse_license extends DefaultPlugin
   private $clearingFilter;
   /** @var LicenseMap */
   private $licenseProjector;
+  /** @var SoftwareHeritageDao */
+  private $softwareHeritageDao;
   /** @var array */
-  protected $agentNames = array('nomos' => 'N', 'monk' => 'M', 'ninka' => 'Nk', 'reportImport' => 'I');
+  protected $agentNames = array('nomos' => 'N', 'monk' => 'M', 'ninka' => 'Nk', 'reportImport' => 'I', 'softwareHeritage' => 'SH');
 
   public function __construct()
   {
@@ -71,6 +74,7 @@ class ui_browse_license extends DefaultPlugin
     $this->licenseDao = $container->get('dao.license');
     $this->clearingDao = $container->get('dao.clearing');
     $this->agentDao = $container->get('dao.agent');
+    $this->shDao = $this->container->get('dao.softwareHeritage');
     $this->clearingFilter = $container->get('businessrules.clearing_decision_filter');
   }
 
